@@ -1,41 +1,58 @@
 <template>
+  <!-- Componente IdezGeo -->
   <div class="idez-geo-info">
     <div class="intro">
-      <h1>Bem-vindo ao IdezGeo</h1>
+      <h1>IdezGeo</h1>
       <img src="https://media.licdn.com/dms/image/D4D0BAQGZrvjRiJZ1LA/company-logo_200_200/0/1697479325216?e=1706140800&v=beta&t=tn5ISQWUQ-qz0hDf99aNFIddKJ7Kf8TJnw6oUYuEwtw" alt="Idez Logo" />
       <p>
         O IdezGeo é uma aplicação que permite explorar informações geográficas de municípios brasileiros.
       </p>
     </div>
-    <div class="uf-buttons">
-      <button
-        v-for="uf in ufs"
-        :key="uf"
-        @click="fetchMunicipalities(uf)"
-      >
-        {{ uf }}
-      </button>
-    </div>
 
-    <div v-if="loading" class="loading-circle">
-      <div class="spinner"></div>
-    </div>
-
-    <div v-if="municipalities.length > 0" class="municipality-list">
-      <div
-        v-for="municipality in municipalities"
-        :key="municipality.ibge_code"
-        class="municipality-card"
-      >
-        <div class="municipality-name">{{ municipality.name }}</div>
-        <div class="municipality-ibge">IBGE: {{ municipality.ibge_code }}</div>
+    <div class="content-container">
+      <div class="uf-column">
+        <!-- Botões para selecionar UF -->
+        <div v-if="!loading" class="uf-buttons">
+          <button
+            v-for="uf in ufs"
+            :key="uf"
+            @click="fetchMunicipalities(uf)"
+          >
+            {{ uf }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div v-if="totalPages > 1" class="pagination">
-      <span>Página {{ currentPage }} de {{ totalPages }}</span>
-      <button :disabled="currentPage === 1" @click="prevPage">Anterior</button>
-      <button :disabled="currentPage === totalPages" @click="nextPage">Próxima</button>
+      <div v-if="loading" class="loading-circle">
+        <!-- Ícone de carregamento -->
+        <div class="spinner"></div>
+      </div>
+
+      <div class="municipality-column">
+        <div v-if="!uf" class="select-uf-message">
+          <!-- Mensagem para selecionar uma UF -->
+          Selecione uma UF para listar as cidades correspondentes.
+        </div>
+
+        <div v-if="totalPages > 1" class="pagination">
+          <!-- Paginação -->
+          <span>Página {{ currentPage }} de {{ totalPages }}</span>
+          <button :disabled="currentPage === 1" @click="prevPage">Anterior</button>
+          <button :disabled="currentPage === totalPages" @click="nextPage">Próxima</button>
+        </div>
+
+        <div v-if="municipalities.length > 0" class="municipality-list">
+          <!-- Lista de municípios -->
+          <div
+            v-for="municipality in municipalities"
+            :key="municipality.ibge_code"
+            class="municipality-card"
+          >
+            <div class="municipality-name">{{ municipality.name }}</div>
+            <div class="municipality-ibge">IBGE: {{ municipality.ibge_code }}</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -44,26 +61,30 @@
 export default {
   data() {
     return {
+      // Array de UFs disponíveis
       ufs: ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'],
-      loading: false,
-      municipalities: [],
-      currentPage: 1,
-      totalPages: 1,
-      uf: null,
+      loading: false, // Flag de carregamento
+      municipalities: [], // Lista de municípios
+      currentPage: 1, // Página atual
+      totalPages: 1, // Total de páginas
+      uf: null, // UF selecionada
     };
   },
   methods: {
     async fetchMunicipalities(uf) {
+      // Função para buscar municípios
       this.loading = true;
       this.municipalities = [];
       this.uf = uf;
 
-      const apiUrl = `http://localhost:8000/api/municipalities/${uf}?page=${this.currentPage}`; // Adicionando a página à URL
+      // Construção da URL da API
+      const apiUrl = `http://localhost:8000/api/municipalities/${uf}?page=${this.currentPage}`;
 
       try {
         const response = await fetch(apiUrl);
         const data = await response.json();
 
+        // Atualização dos dados
         this.loading = false;
         this.municipalities = data.municipalities;
         this.currentPage = data.current_page;
@@ -74,12 +95,14 @@ export default {
       }
     },
     prevPage() {
+      // Página anterior
       if (this.currentPage > 1) {
         this.currentPage--;
         this.fetchMunicipalities(this.uf);
       }
     },
     nextPage() {
+      // Próxima página
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
         this.fetchMunicipalities(this.uf);
@@ -145,6 +168,20 @@ export default {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.content-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.uf-column {
+  flex: 1;
+  max-width: 300px;
+  margin-right: 20px; /* Espaço entre as colunas */
+}
+
+.municipality-column {
+  flex: 1;
 }
 
 .municipality-list {
